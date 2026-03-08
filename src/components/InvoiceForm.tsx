@@ -158,6 +158,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
               <Textarea
                 className="text-sm min-h-[36px] px-2 py-1"
                 placeholder="Description of work..."
+                spellCheck={true}
                 value={item.description}
                 onChange={(e) => updateWorkItem(i, { description: e.target.value })}
               />

@@ -123,7 +123,13 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
       </SectionCard>
 
       {/* Section 3: Buyer */}
-      <SectionCard title="Buyer Details" icon={<Users className="h-3.5 w-3.5 text-primary" />}>
+      <SectionCard title="Buyer Details" icon={<Users className="h-3.5 w-3.5 text-primary" />}
+        actions={
+          <button className="mini-btn text-destructive" onClick={() => update({ buyerName: "", buyerAddress: "", buyerGst: "" })}>
+            <Trash2 className="h-3 w-3" /> Clear
+          </button>
+        }
+      >
         <FieldGroup label="Buyer Name">
           <Input className="compact-input" value={invoice.buyerName} onChange={(e) => update({ buyerName: e.target.value })} />
         </FieldGroup>

@@ -162,7 +162,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
                 value={item.description}
                 onChange={(e) => updateWorkItem(i, { description: e.target.value })}
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Input
                   className="compact-input font-mono"
                   placeholder="HSN Code"

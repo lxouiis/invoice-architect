@@ -82,6 +82,9 @@ export default function Dashboard() {
       </div>
       <ScrollArea className="flex-1 p-3">
         <InvoicePreview invoice={activeInvoice} />
+        <div className="mt-4 border-t border-border pt-3">
+          <SavedInvoices />
+        </div>
       </ScrollArea>
     </div>
   );

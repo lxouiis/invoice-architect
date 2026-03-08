@@ -203,7 +203,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
             <Input className="compact-input" type="number" value={invoice.sgstRate} onChange={(e) => update({ sgstRate: parseFloat(e.target.value) || 0 })} />
           </FieldGroup>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-xs font-mono bg-muted/30 p-2 rounded">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono bg-muted/30 p-2 rounded">
           <div>
             <span className="compact-label">Subtotal</span>
             <div className="font-semibold">₹ {invoice.subtotal.toLocaleString("en-IN")}</div>

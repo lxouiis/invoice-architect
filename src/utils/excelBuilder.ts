@@ -289,8 +289,10 @@ export async function generateWorkbook(invoices: InvoiceData[]): Promise<void> {
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
-  const date = new Date().toISOString().split("T")[0].replace(/-/g, "");
-  const fileName = `invoice_${date}.xlsx`;
+  const invoiceLabel = invoiceNumbers.length === 1
+    ? `invoice_${invoiceNumbers[0] || "Draft"}`
+    : `invoice_${invoiceNumbers.join("_to_")}`;
+  const fileName = `${invoiceLabel}.xlsx`;
 
   // Download locally
   saveAs(blob, fileName);

@@ -92,31 +92,31 @@ export default function Dashboard() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 py-1.5 border-b border-border bg-card gap-1">
         <div className="flex items-center gap-2">
           <FileSpreadsheet className="h-4 w-4 text-primary" />
           <span className="text-sm font-bold text-foreground">Invoice Generator</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           <button className="mini-btn" onClick={addInvoice}>
-            <FilePlus className="h-3 w-3" /> New
+            <FilePlus className="h-3 w-3" /> <span className="hidden sm:inline">New</span>
           </button>
           <button className="mini-btn" onClick={duplicateInvoice}>
-            <Copy className="h-3 w-3" /> Duplicate
+            <Copy className="h-3 w-3" /> <span className="hidden sm:inline">Duplicate</span>
           </button>
           <button className="mini-btn" onClick={resetInvoice}>
-            <RotateCcw className="h-3 w-3" /> Reset
+            <RotateCcw className="h-3 w-3" /> <span className="hidden sm:inline">Reset</span>
           </button>
           {invoices.length > 1 && (
             <button className="mini-btn text-destructive" onClick={deleteInvoice}>
-              <Trash2 className="h-3 w-3" /> Delete
+              <Trash2 className="h-3 w-3" /> <span className="hidden sm:inline">Delete</span>
             </button>
           )}
           {isMobile && (
             <Sheet>
               <SheetTrigger asChild>
                 <button className="mini-btn">
-                  <Eye className="h-3 w-3" /> Preview
+                  <Eye className="h-3 w-3" /> <span className="hidden sm:inline">Preview</span>
                 </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="h-[80vh] p-0">
@@ -125,7 +125,7 @@ export default function Dashboard() {
             </Sheet>
           )}
           <button className="mini-btn-primary" onClick={handleGenerate}>
-            <Download className="h-3 w-3" /> Generate XLSX
+            <Download className="h-3 w-3" /> <span className="hidden sm:inline">Generate XLSX</span>
           </button>
         </div>
       </header>

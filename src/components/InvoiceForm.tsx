@@ -66,7 +66,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
           </button>
         }
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FieldGroup label="Seller Name">
             <Input className="compact-input" value={invoice.sellerName} onChange={(e) => update({ sellerName: e.target.value })} />
           </FieldGroup>

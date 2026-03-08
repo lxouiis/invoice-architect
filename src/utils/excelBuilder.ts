@@ -299,7 +299,7 @@ export async function generateWorkbook(invoices: InvoiceData[]): Promise<void> {
 
   // Upload to cloud storage
   try {
-    const filePath = `${date}/${fileName}`;
+    const filePath = `${invoiceLabel}/${fileName}`;
     const { error: uploadError } = await supabase.storage
       .from("invoices")
       .upload(filePath, blob, {

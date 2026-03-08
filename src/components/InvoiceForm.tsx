@@ -83,7 +83,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
         <FieldGroup label="Address">
           <Input className="compact-input" value={invoice.sellerAddress} onChange={(e) => update({ sellerAddress: e.target.value })} />
         </FieldGroup>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <FieldGroup label="City">
             <Input className="compact-input" value={invoice.sellerCity} onChange={(e) => update({ sellerCity: e.target.value })} />
           </FieldGroup>

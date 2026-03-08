@@ -122,10 +122,11 @@
 @layer base {
   * {
     @apply border-border;
+    font-size: 16px;
   }
 
   body {
-    @apply bg-background text-foreground text-base;
+    @apply bg-background text-foreground;
     font-family: var(--font-sans);
     font-size: 16px;
   }

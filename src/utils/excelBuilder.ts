@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import type { InvoiceData } from "@/types/invoice";
 import { formatAmount } from "@/utils/validators";
+import { supabase } from "@/integrations/supabase/client";
 
 const FONT_NAME = "Times New Roman";
 const THIN_BORDER: Partial<ExcelJS.Border> = { style: "thin" };
@@ -91,7 +92,6 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
   row = 3;
 
   // Rows 3-8: Seller details (left), Invoice No (middle), Date (right)
-  // Seller block: A3:D8
   sheet.mergeCells(row, 1, row + 5, 4);
   const sellerText = [
     invoice.sellerName,
@@ -150,22 +150,11 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
   row = 13;
 
   // Row 13: Table header
-  const headers = [
-    { col: 1, span: 1, text: "SL\nNO", align: "center" as const },
-    { col: 2, span: 4, text: "DESCRIPTION OF WORK", align: "center" as const },
-    { col: 6, span: 1, text: "HSN Code", align: "center" as const },
-    { col: 7, span: 2, text: "Amount", align: "center" as const },
-  ];
-
-  // SL NO
   setCell(sheet, row, 1, "SL\nNO", { bold: true, size: 10, align: "center", wrap: true, borders: ALL_BORDERS });
-  // Description
   sheet.mergeCells(row, 2, row, 5);
   setCell(sheet, row, 2, "DESCRIPTION OF WORK", { bold: true, size: 10, align: "center", borders: ALL_BORDERS });
   applyBordersToRange(sheet, row, 2, row, 5);
-  // HSN
   setCell(sheet, row, 6, "HSN Code", { bold: true, size: 10, align: "center", borders: ALL_BORDERS });
-  // Amount
   sheet.mergeCells(row, 7, row, 8);
   setCell(sheet, row, 7, "Amount", { bold: true, size: 10, align: "center", borders: ALL_BORDERS });
   applyBordersToRange(sheet, row, 7, row, 8);
@@ -198,7 +187,6 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
   setCell(sheet, row, 1, "", { borders: ALL_BORDERS });
   applyBordersToRange(sheet, row, 1, row, 6);
   sheet.mergeCells(row, 7, row, 8);
-  // Add CGST label in col 6 area
   setCell(sheet, row, 6, `CGST@${invoice.cgstRate}%`, { size: 10, align: "right", underline: true, borders: ALL_BORDERS });
   setCell(sheet, row, 7, `₹ ${invoice.cgstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, {
     size: 10, align: "right", borders: ALL_BORDERS,
@@ -290,8 +278,10 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
 export async function generateWorkbook(invoices: InvoiceData[]): Promise<void> {
   const workbook = new ExcelJS.Workbook();
 
+  const invoiceNumbers: string[] = [];
   for (const invoice of invoices) {
     const name = `Invoice ${invoice.invoiceNumber || "Draft"}`;
+    invoiceNumbers.push(invoice.invoiceNumber || "Draft");
     buildInvoiceSheet(workbook, invoice, name);
   }
 
@@ -300,5 +290,34 @@ export async function generateWorkbook(invoices: InvoiceData[]): Promise<void> {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const date = new Date().toISOString().split("T")[0].replace(/-/g, "");
-  saveAs(blob, `invoice_${date}.xlsx`);
+  const fileName = `invoice_${date}.xlsx`;
+
+  // Download locally
+  saveAs(blob, fileName);
+
+  // Upload to cloud storage
+  try {
+    const filePath = `${date}/${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("invoices")
+      .upload(filePath, blob, {
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      return;
+    }
+
+    // Save metadata to database
+    await supabase.from("generated_invoices").insert({
+      file_name: fileName,
+      file_path: filePath,
+      file_size: blob.size,
+      invoice_numbers: invoiceNumbers,
+    });
+  } catch (err) {
+    console.error("Cloud save error:", err);
+  }
 }

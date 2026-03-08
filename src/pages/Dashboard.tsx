@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { InvoicePreview } from "@/components/InvoicePreview";
+import { SavedInvoices } from "@/components/SavedInvoices";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +14,7 @@ import { generateWorkbook } from "@/utils/excelBuilder";
 import { calculateTaxes } from "@/utils/taxCalculator";
 import { numberToWords } from "@/utils/numberToWords";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const isMobile = useIsMobile();
@@ -64,13 +66,13 @@ export default function Dashboard() {
   };
 
   const handleGenerate = async () => {
-    // Auto-calc all invoices before generating
     const processed = invoices.map((inv) => {
       const taxes = calculateTaxes(inv);
       const total = taxes.totalAmount || 0;
       return { ...inv, ...taxes, amountInWords: inv.amountInWords || numberToWords(total) };
     });
     await generateWorkbook(processed);
+    toast.success("Invoice generated & saved to cloud!");
   };
 
   const PreviewPanel = (
@@ -80,6 +82,9 @@ export default function Dashboard() {
       </div>
       <ScrollArea className="flex-1 p-3">
         <InvoicePreview invoice={activeInvoice} />
+        <div className="mt-4 border-t border-border pt-3">
+          <SavedInvoices />
+        </div>
       </ScrollArea>
     </div>
   );

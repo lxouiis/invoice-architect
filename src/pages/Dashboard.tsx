@@ -66,13 +66,13 @@ export default function Dashboard() {
   };
 
   const handleGenerate = async () => {
-    // Auto-calc all invoices before generating
     const processed = invoices.map((inv) => {
       const taxes = calculateTaxes(inv);
       const total = taxes.totalAmount || 0;
       return { ...inv, ...taxes, amountInWords: inv.amountInWords || numberToWords(total) };
     });
     await generateWorkbook(processed);
+    toast.success("Invoice generated & saved to cloud!");
   };
 
   const PreviewPanel = (

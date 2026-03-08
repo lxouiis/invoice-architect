@@ -66,7 +66,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
           </button>
         }
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FieldGroup label="Seller Name">
             <Input className="compact-input" value={invoice.sellerName} onChange={(e) => update({ sellerName: e.target.value })} />
           </FieldGroup>
@@ -83,7 +83,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
         <FieldGroup label="Address">
           <Input className="compact-input" value={invoice.sellerAddress} onChange={(e) => update({ sellerAddress: e.target.value })} />
         </FieldGroup>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <FieldGroup label="City">
             <Input className="compact-input" value={invoice.sellerCity} onChange={(e) => update({ sellerCity: e.target.value })} />
           </FieldGroup>
@@ -106,7 +106,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
           </button>
         }
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FieldGroup label="Invoice Number">
             <Input className="compact-input font-mono" value={invoice.invoiceNumber} onChange={(e) => update({ invoiceNumber: e.target.value })} />
           </FieldGroup>
@@ -162,7 +162,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
                 value={item.description}
                 onChange={(e) => updateWorkItem(i, { description: e.target.value })}
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Input
                   className="compact-input font-mono"
                   placeholder="HSN Code"
@@ -195,7 +195,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
           </button>
         }
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FieldGroup label="CGST %">
             <Input className="compact-input" type="number" value={invoice.cgstRate} onChange={(e) => update({ cgstRate: parseFloat(e.target.value) || 0 })} />
           </FieldGroup>
@@ -203,7 +203,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
             <Input className="compact-input" type="number" value={invoice.sgstRate} onChange={(e) => update({ sgstRate: parseFloat(e.target.value) || 0 })} />
           </FieldGroup>
         </div>
-        <div className="grid grid-cols-4 gap-2 text-xs font-mono bg-muted/30 p-2 rounded">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono bg-muted/30 p-2 rounded">
           <div>
             <span className="compact-label">Subtotal</span>
             <div className="font-semibold">₹ {invoice.subtotal.toLocaleString("en-IN")}</div>
@@ -240,7 +240,7 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
           </button>
         }
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FieldGroup label="Bank Name">
             <Input className="compact-input" value={invoice.bankName} onChange={(e) => update({ bankName: e.target.value })} />
           </FieldGroup>

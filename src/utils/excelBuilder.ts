@@ -183,11 +183,11 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
   row = 14 + itemRows; // row 20
 
   // CGST row
-  sheet.mergeCells(row, 1, row, 6);
+  sheet.mergeCells(row, 1, row, 5);
   setCell(sheet, row, 1, "", { borders: ALL_BORDERS });
-  applyBordersToRange(sheet, row, 1, row, 6);
-  sheet.mergeCells(row, 7, row, 8);
+  applyBordersToRange(sheet, row, 1, row, 5);
   setCell(sheet, row, 6, `CGST@${invoice.cgstRate}%`, { size: 10, align: "right", underline: true, borders: ALL_BORDERS });
+  sheet.mergeCells(row, 7, row, 8);
   setCell(sheet, row, 7, `₹ ${invoice.cgstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, {
     size: 10, align: "right", borders: ALL_BORDERS,
   });
@@ -196,9 +196,9 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
   row++;
 
   // SGST row
-  sheet.mergeCells(row, 1, row, 6);
+  sheet.mergeCells(row, 1, row, 5);
   setCell(sheet, row, 1, "", { borders: ALL_BORDERS });
-  applyBordersToRange(sheet, row, 1, row, 6);
+  applyBordersToRange(sheet, row, 1, row, 5);
   setCell(sheet, row, 6, `SGST@${invoice.sgstRate}%`, { size: 10, align: "right", underline: true, borders: ALL_BORDERS });
   sheet.mergeCells(row, 7, row, 8);
   setCell(sheet, row, 7, `₹ ${invoice.sgstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, {
@@ -209,9 +209,9 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
   row++;
 
   // Total row
-  sheet.mergeCells(row, 1, row, 6);
+  sheet.mergeCells(row, 1, row, 5);
   setCell(sheet, row, 1, "", { borders: ALL_BORDERS });
-  applyBordersToRange(sheet, row, 1, row, 6);
+  applyBordersToRange(sheet, row, 1, row, 5);
   setCell(sheet, row, 6, "Total", { bold: true, size: 10, align: "right", borders: ALL_BORDERS });
   sheet.mergeCells(row, 7, row, 8);
   setCell(sheet, row, 7, `₹ ${invoice.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, {

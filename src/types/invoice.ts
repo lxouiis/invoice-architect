@@ -51,6 +51,7 @@ export interface InvoiceData {
   // Footer
   footerCompanyName: string;
   signatureText: string;
+  sealLabel: string;
 }
 
 export const defaultSellerDetails: Partial<InvoiceData> = {
@@ -75,6 +76,7 @@ export const defaultBankDetails: Partial<InvoiceData> = {
 export const defaultFooter: Partial<InvoiceData> = {
   footerCompanyName: "M/s. Avinash Constructions, Prop Venugopal Darur",
   signatureText: "Proprietor",
+  sealLabel: "Customer's Seal and\nSignature",
 };
 
 export const createEmptyInvoice = (): InvoiceData => ({
@@ -108,4 +110,5 @@ export const createEmptyInvoice = (): InvoiceData => ({
   branch: "",
   footerCompanyName: "",
   signatureText: "",
+  sealLabel: "Customer's Seal and\nSignature",
 });

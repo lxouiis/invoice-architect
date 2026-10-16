@@ -246,7 +246,7 @@ function buildInvoiceSheet(workbook: ExcelJS.Workbook, invoice: InvoiceData, she
 
   // Customer seal + Signature
   sheet.mergeCells(row, 1, row + 2, 4);
-  setCell(sheet, row, 1, "Customer's Seal and\nSignature", { size: 10, wrap: true, valign: "top" });
+  setCell(sheet, row, 1, invoice.sealLabel, { size: 10, wrap: true, valign: "top" });
   applyBordersToRange(sheet, row, 1, row + 2, 4);
 
   sheet.mergeCells(row, 5, row + 2, 8);

@@ -275,6 +275,9 @@ export function InvoiceForm({ invoice, onChange }: InvoiceFormProps) {
         <FieldGroup label="Signature Text">
           <Input className="compact-input" value={invoice.signatureText} onChange={(e) => update({ signatureText: e.target.value })} />
         </FieldGroup>
+        <FieldGroup label="Seal Label">
+          <Textarea className="text-sm min-h-[48px] px-2 py-1" value={invoice.sealLabel} onChange={(e) => update({ sealLabel: e.target.value })} placeholder="e.g., Customer's Seal and\nSignature" />
+        </FieldGroup>
       </SectionCard>
     </div>
   );

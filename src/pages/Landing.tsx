@@ -170,11 +170,13 @@ export default function Landing() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="text-center mt-8 space-y-2"
+          className="text-center mt-8 space-y-3"
         >
-          <p className="text-xs text-zinc-500 dark:text-zinc-500">
-            Hit rate limit? Use demo mode:
-          </p>
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">
+              💡 Hit auth rate limit? Use demo mode to test all features
+            </p>
+          </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -183,10 +185,13 @@ export default function Landing() {
               localStorage.setItem('userEmail', 'demo@example.com');
               navigate('/documents');
             }}
-            className="text-xs px-3 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+            className="text-xs px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors font-medium"
           >
-            Enter Demo Mode
+            🚀 Enter Demo Mode
           </motion.button>
+          <p className="text-xs text-zinc-500 dark:text-zinc-500">
+            Rate limit resets in ~1 hour. Session persists with magic link!
+          </p>
         </motion.div>
       </motion.div>
     </div>

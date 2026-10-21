@@ -40,9 +40,10 @@ export default function LogPage() {
       const isDemoMode = localStorage.getItem('demoMode') === 'true';
 
       if (isDemoMode) {
-        // Demo mode: use mock data
+        // Demo mode: use mock data + uploaded files
         setUserEmail(localStorage.getItem('userEmail') || 'demo@example.com');
         setUserId('demo-user-id');
+
         const mockFiles: FileItem[] = [
           {
             id: '1',
@@ -78,8 +79,13 @@ export default function LogPage() {
             created_at: new Date().toISOString(),
           },
         ];
-        setFiles(mockFiles);
-        groupFilesByDate(mockFiles);
+
+        // Add user-uploaded files from demo mode
+        const demoFiles = JSON.parse(localStorage.getItem('demoFiles') || '[]');
+        const allFiles = [...mockFiles, ...demoFiles];
+
+        setFiles(allFiles);
+        groupFilesByDate(allFiles);
         return;
       }
 
@@ -158,7 +164,13 @@ export default function LogPage() {
   const handleDelete = async (id: string) => {
     const isDemoMode = localStorage.getItem('demoMode') === 'true';
 
-    if (!isDemoMode) {
+    if (isDemoMode) {
+      // Demo mode: remove from localStorage
+      const demoFiles = JSON.parse(localStorage.getItem('demoFiles') || '[]');
+      const updated = demoFiles.filter((f: FileItem) => f.id !== id);
+      localStorage.setItem('demoFiles', JSON.stringify(updated));
+    } else {
+      // Real mode: delete from Supabase
       const { error } = await supabase
         .from('files')
         .delete()

@@ -65,8 +65,23 @@ export default function UploadModal({
         }
 
         if (isDemoMode) {
-          // Demo mode: simulate upload without hitting Supabase
+          // Demo mode: store in localStorage
           await new Promise(resolve => setTimeout(resolve, 500));
+
+          const demoFiles = JSON.parse(localStorage.getItem('demoFiles') || '[]');
+          const newFile = {
+            id: Date.now().toString(),
+            user_id: 'demo-user-id',
+            file_name: file.name,
+            file_type: fileType,
+            upload_date: new Date().toISOString().split('T')[0],
+            category,
+            file_size: file.size,
+            file_url: '#',
+            created_at: new Date().toISOString(),
+          };
+          demoFiles.push(newFile);
+          localStorage.setItem('demoFiles', JSON.stringify(demoFiles));
         } else {
           // Real mode: upload to Supabase
           await uploadFile(file, userId, category);

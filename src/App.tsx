@@ -1,30 +1,19 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "./pages/Landing";
-import Dashboard from "./pages/Dashboard";
-import LogPage from "./pages/LogPage";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
+import LogPage from './pages/LogPage';
+import InvoiceGenerator from './pages/InvoiceGenerator';
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/invoices" element={<Dashboard />} />
-          <Route path="/documents" element={<LogPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/documents" element={<Dashboard />} />
+      <Route path="/documents/:category" element={<LogPage />} />
+      <Route path="/invoices" element={<InvoiceGenerator />} />
+    </Routes>
+  </BrowserRouter>
 );
 
 export default App;

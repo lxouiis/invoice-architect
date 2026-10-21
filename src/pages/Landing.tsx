@@ -1,260 +1,194 @@
 import { motion } from 'motion/react';
-import { ArrowRight, FileSpreadsheet, Cloud, Mail, LogIn } from '@phosphor-icons/react';
+import { SignIn, FileText, Check } from '@phosphor-icons/react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isLinkSent, setIsLinkSent] = useState(false);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/documents');
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const handleSendMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/documents`,
+        },
+      });
+
+      if (authError) {
+        setError(authError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLinkSent(true);
+    } catch (err) {
+      setError('An unexpected error occurred');
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="bg-white dark:bg-zinc-950 min-h-screen">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet size={24} className="text-blue-600 dark:text-blue-400" weight="fill" />
-            <span className="font-semibold text-lg text-zinc-900 dark:text-white">Invoice Architect</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors">
-              Docs
-            </button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/invoices')}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2"
-            >
-              <LogIn size={16} />
-              Open App
-            </motion.button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-zinc-950 dark:to-zinc-900 flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo & Title */}
+        <div className="text-center mb-8">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.4 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 dark:bg-blue-500 rounded-2xl mb-4 mx-auto"
+          >
+            <FileText size={32} className="text-white" weight="fill" />
+          </motion.div>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
+            Invoice Architect
+          </h1>
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Your document management system
+          </p>
         </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20 lg:py-32 grid lg:grid-cols-2 gap-12 items-center">
+        {/* Login Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-8 border border-zinc-100 dark:border-zinc-700"
         >
-          <h1 className="text-5xl lg:text-6xl font-bold leading-tight text-zinc-900 dark:text-white mb-6">
-            Invoices, organized. Always.
-          </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 leading-relaxed mb-8 max-w-lg">
-            Generate professional invoices instantly. Back them up to Google Drive automatically. View everything in one place—no chaos, no lost files.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/invoices')}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
-            >
-              Start Generating
-              <ArrowRight size={18} />
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/documents')}
-              className="px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white font-medium rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
-            >
-              View Documents
-              <ArrowRight size={18} />
-            </motion.button>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative"
-        >
-          <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950 dark:to-zinc-900 rounded-2xl p-8 lg:p-12 border border-blue-200 dark:border-blue-900">
-            <div className="space-y-4">
-              <div className="h-12 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700"></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-8 bg-white dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700"></div>
-                <div className="h-8 bg-white dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700"></div>
-              </div>
-              <div className="h-24 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700"></div>
-            </div>
-          </div>
-          <div className="absolute -bottom-4 -right-4 bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-4 border border-zinc-200 dark:border-zinc-800 max-w-xs">
-            <p className="text-sm font-medium text-zinc-900 dark:text-white mb-2">Auto-synced to Google Drive</p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">Every invoice backed up instantly</p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Features Section */}
-      <section className="bg-zinc-50 dark:bg-zinc-900/50 py-20 lg:py-28 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.6 }}
-            className="mb-16"
-          >
-            <h2 className="text-4xl font-bold text-zinc-900 dark:text-white mb-4">Everything you need</h2>
-            <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl">
-              Built for contractors and builders who need invoices that work, not workflows that slow you down.
-            </p>
-          </motion.div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: FileSpreadsheet,
-                title: 'Professional Invoices',
-                description: 'Create invoices instantly. Customize seller details, tax rates, and signatures. Export to Excel.',
-              },
-              {
-                icon: Cloud,
-                title: 'Google Drive Sync',
-                description: 'Every invoice auto-backs up to your Google Drive. Organize by date, type, or client. Never lose a file.',
-              },
-              {
-                icon: Mail,
-                title: 'Gmail Integration',
-                description: 'Coming soon: attach invoices directly from your app. Search and manage files alongside your email.',
-              },
-            ].map((feature, i) => (
+          {isLinkSent ? (
+            <div className="text-center space-y-4">
               <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="bg-white dark:bg-zinc-800 rounded-xl p-8 border border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mx-auto"
               >
-                <feature.icon size={32} className="text-blue-600 dark:text-blue-400 mb-4" weight="bold" />
-                <h3 className="text-xl font-semibold text-zinc-900 dark:text-white mb-2">{feature.title}</h3>
-                <p className="text-zinc-600 dark:text-zinc-400">{feature.description}</p>
+                <Check size={32} className="text-green-600 dark:text-green-400" weight="bold" />
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20 lg:py-28">
-        <motion.h2
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          className="text-4xl font-bold text-zinc-900 dark:text-white mb-16 text-center"
-        >
-          Three steps to organized invoices
-        </motion.h2>
-
-        <div className="space-y-12">
-          {[
-            {
-              number: '01',
-              title: 'Fill in your details',
-              description: 'Enter seller info, buyer details, and work items. Customize signatures and tax rates once—use forever.',
-            },
-            {
-              number: '02',
-              title: 'Generate & download',
-              description: 'Create a professional XLSX invoice. Download it, print it, send it. All in seconds.',
-            },
-            {
-              number: '03',
-              title: 'Auto-synced to Drive',
-              description: 'Invoice automatically backs up to your Google Drive. Access it anytime, anywhere. No manual uploads.',
-            },
-          ].map((step, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className={`flex gap-12 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}
-            >
-              <div className="flex-1">
-                <div className="text-6xl font-bold text-blue-600/20 dark:text-blue-400/20 mb-4">{step.number}</div>
-                <h3 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-3">{step.title}</h3>
-                <p className="text-lg text-zinc-600 dark:text-zinc-400">{step.description}</p>
+              <div>
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+                  Magic link sent!
+                </h2>
+                <p className="text-zinc-600 dark:text-zinc-400">
+                  Check your email for a link to log in. It expires in 24 hours.
+                </p>
               </div>
-              <div className="flex-1 hidden lg:block">
-                <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950 dark:to-zinc-900 rounded-xl h-64 border border-blue-200 dark:border-blue-900"></div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setIsLinkSent(false);
+                  setEmail('');
+                }}
+                className="w-full py-3 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white font-semibold rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+              >
+                Try another email
+              </motion.button>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMagicLink} className="space-y-6">
+              {error && (
+                <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
 
-      {/* CTA Section */}
-      <section className="bg-blue-600 dark:bg-blue-900 py-20 lg:py-28">
+              <div>
+                <label className="block text-sm font-medium text-zinc-900 dark:text-white mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="dad@example.com"
+                  required
+                  className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+                />
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isLoading || !email}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                      className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                    />
+                    Sending link...
+                  </>
+                ) : (
+                  <>
+                    <SignIn size={20} />
+                    Send Magic Link
+                  </>
+                )}
+              </motion.button>
+            </form>
+          )}
+
+          <p className="text-center text-sm text-zinc-600 dark:text-zinc-400 mt-6">
+            We'll send you a secure link to log in
+          </p>
+        </motion.div>
+
+        {/* Demo Info */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto px-6 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="text-center mt-8 space-y-2"
         >
-          <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">Stop losing track of invoices</h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Start generating professional invoices today. Back them up automatically. Access them anytime.
+          <p className="text-xs text-zinc-500 dark:text-zinc-500">
+            Hit rate limit? Use demo mode:
           </p>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/invoices')}
-            className="px-8 py-4 bg-white hover:bg-blue-50 text-blue-600 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 mx-auto"
+            onClick={() => {
+              localStorage.setItem('demoMode', 'true');
+              localStorage.setItem('userEmail', 'demo@example.com');
+              navigate('/documents');
+            }}
+            className="text-xs px-3 py-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
           >
-            Get Started Now
-            <ArrowRight size={20} />
+            Enter Demo Mode
           </motion.button>
         </motion.div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-zinc-950 dark:bg-black text-zinc-400 py-12 border-t border-zinc-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <FileSpreadsheet size={20} className="text-blue-400" weight="fill" />
-                <span className="font-semibold text-white">Invoice Architect</span>
-              </div>
-              <p className="text-sm">Built for contractors who value their time.</p>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Docs</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-zinc-800 pt-8 text-center text-sm">
-            <p>© 2026 Invoice Architect. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      </motion.div>
     </div>
   );
 }

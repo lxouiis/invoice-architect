@@ -1,234 +1,275 @@
-import React, { useState, useCallback } from "react";
-import { InvoiceForm } from "@/components/InvoiceForm";
-import { InvoicePreview } from "@/components/InvoicePreview";
-import { SavedInvoices } from "@/components/SavedInvoices";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  FilePlus, Copy, Eye, Download, RotateCcw, Trash2, FileSpreadsheet, Menu, Cloud, FileEdit,
-} from "lucide-react";
-import type { InvoiceData } from "@/types/invoice";
-import { createEmptyInvoice, defaultSellerDetails, defaultBankDetails, defaultFooter } from "@/types/invoice";
-import { generateWorkbook } from "@/utils/excelBuilder";
-import { calculateTaxes } from "@/utils/taxCalculator";
-import { numberToWords } from "@/utils/numberToWords";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { toast } from "sonner";
+import React, { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
+import { FileText, Receipt, Scan, SignOut, Plus } from '@phosphor-icons/react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+
+interface CategoryCard {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  color: string;
+  count: number;
+}
 
 export default function Dashboard() {
-  const isMobile = useIsMobile();
-  const [invoices, setInvoices] = useState<InvoiceData[]>([
-    { ...createEmptyInvoice(), ...defaultSellerDetails, ...defaultBankDetails, ...defaultFooter },
-  ]);
-  const [activeTab, setActiveTab] = useState("0");
-  const [mobileView, setMobileView] = useState<"form" | "preview" | "cloud">("form");
+  const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState('');
+  const [categories, setCategories] = useState<CategoryCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const activeIndex = parseInt(activeTab);
-  const activeInvoice = invoices[activeIndex] || invoices[0];
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
 
-  const updateInvoice = useCallback(
-    (data: InvoiceData) => {
-      setInvoices((prev) => prev.map((inv, i) => (i === activeIndex ? data : inv)));
-    },
-    [activeIndex]
-  );
+      if (isDemoMode) {
+        setUserEmail(localStorage.getItem('userEmail') || 'demo@example.com');
+        setCategories([
+          {
+            id: 'documents',
+            name: 'Documents',
+            icon: <FileText size={40} weight="fill" />,
+            color: 'from-purple-500 to-purple-600',
+            count: 1,
+          },
+          {
+            id: 'invoices',
+            name: 'Invoices',
+            icon: <Receipt size={40} weight="fill" />,
+            color: 'from-green-500 to-green-600',
+            count: 2,
+          },
+          {
+            id: 'scans',
+            name: 'Scanned Files',
+            icon: <Scan size={40} weight="fill" />,
+            color: 'from-blue-500 to-blue-600',
+            count: 1,
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
 
-  const addInvoice = () => {
-    const newInv = {
-      ...createEmptyInvoice(),
-      ...defaultSellerDetails,
-      ...defaultBankDetails,
-      ...defaultFooter,
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (!session || error) {
+        navigate('/');
+        return;
+      }
+
+      setUserEmail(session.user.email || '');
+      fetchCategoryCounts(session.user.id);
     };
-    setInvoices((prev) => [...prev, newInv]);
-    setActiveTab(String(invoices.length));
+
+    checkAuth();
+  }, [navigate]);
+
+  const fetchCategoryCounts = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('files')
+        .select('category')
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const counts = {
+        documents: data?.filter((f) => f.category === 'document').length || 0,
+        invoices: data?.filter((f) => f.category === 'invoice').length || 0,
+        scans: data?.filter((f) => f.category === 'scan').length || 0,
+      };
+
+      setCategories([
+        {
+          id: 'documents',
+          name: 'Documents',
+          icon: <FileText size={40} weight="fill" />,
+          color: 'from-purple-500 to-purple-600',
+          count: counts.documents,
+        },
+        {
+          id: 'invoices',
+          name: 'Invoices',
+          icon: <Receipt size={40} weight="fill" />,
+          color: 'from-green-500 to-green-600',
+          count: counts.invoices,
+        },
+        {
+          id: 'scans',
+          name: 'Scanned Files',
+          icon: <Scan size={40} weight="fill" />,
+          color: 'from-blue-500 to-blue-600',
+          count: counts.scans,
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const duplicateInvoice = () => {
-    const dup = { ...activeInvoice, invoiceNumber: "" };
-    setInvoices((prev) => [...prev, dup]);
-    setActiveTab(String(invoices.length));
-  };
+  const handleLogout = async () => {
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
 
-  const deleteInvoice = () => {
-    if (invoices.length <= 1) return;
-    setInvoices((prev) => prev.filter((_, i) => i !== activeIndex));
-    setActiveTab("0");
-  };
+    if (isDemoMode) {
+      localStorage.removeItem('demoMode');
+      localStorage.removeItem('userEmail');
+    } else {
+      await supabase.auth.signOut();
+    }
 
-  const resetInvoice = () => {
-    updateInvoice({
-      ...createEmptyInvoice(),
-      ...defaultSellerDetails,
-      ...defaultBankDetails,
-      ...defaultFooter,
-    });
-  };
-
-  const handleGenerate = async () => {
-    const processed = invoices.map((inv) => {
-      const taxes = calculateTaxes(inv);
-      const total = taxes.totalAmount || 0;
-      return { ...inv, ...taxes, amountInWords: inv.amountInWords || numberToWords(total) };
-    });
-    await generateWorkbook(processed);
-    toast.success("Invoice generated & saved to cloud!");
+    navigate('/');
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card">
-        <div className="flex items-center gap-2">
-          <FileSpreadsheet className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold text-foreground">Invoice Generator</span>
+    <div className="min-h-screen bg-white dark:bg-zinc-950">
+      {/* Header */}
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="sticky top-0 z-40 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FileText size={28} className="text-blue-600 dark:text-blue-400" weight="fill" />
+            <div>
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
+                Document Hub
+              </h1>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400">{userEmail}</p>
+            </div>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleLogout}
+            className="px-4 py-2 flex items-center gap-2 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors"
+          >
+            <SignOut size={20} />
+            Sign Out
+          </motion.button>
         </div>
+      </motion.header>
 
-        {/* Desktop actions */}
-        {!isMobile && (
-          <div className="flex items-center gap-1">
-            <button className="mini-btn" onClick={addInvoice}>
-              <FilePlus className="h-3 w-3" /> New
-            </button>
-            <button className="mini-btn" onClick={duplicateInvoice}>
-              <Copy className="h-3 w-3" /> Duplicate
-            </button>
-            <button className="mini-btn" onClick={resetInvoice}>
-              <RotateCcw className="h-3 w-3" /> Reset
-            </button>
-            {invoices.length > 1 && (
-              <button className="mini-btn text-destructive" onClick={deleteInvoice}>
-                <Trash2 className="h-3 w-3" /> Delete
-              </button>
-            )}
-            <button className="mini-btn-primary" onClick={handleGenerate}>
-              <Download className="h-3 w-3" /> Generate XLSX
-            </button>
-          </div>
-        )}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="mb-12"
+        >
+          <h2 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
+            Your Files
+          </h2>
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Organize and manage your documents by category
+          </p>
+        </motion.div>
 
-        {/* Mobile: generate + hamburger */}
-        {isMobile && (
-          <div className="flex items-center gap-1">
-            <button className="mini-btn-primary" onClick={handleGenerate}>
-              <Download className="h-3 w-3" />
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="mini-btn">
-                  <Menu className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={addInvoice}>
-                  <FilePlus className="h-4 w-4 mr-2" /> New Invoice
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={duplicateInvoice}>
-                  <Copy className="h-4 w-4 mr-2" /> Duplicate
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={resetInvoice}>
-                  <RotateCcw className="h-4 w-4 mr-2" /> Reset
-                </DropdownMenuItem>
-                {invoices.length > 1 && (
-                  <DropdownMenuItem onClick={deleteInvoice} className="text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
-      </header>
-
-      {/* Invoice tabs (multi-invoice) */}
-      {invoices.length > 1 && (
-        <div className="border-b border-border bg-muted/20 px-3">
-          <div className="flex gap-1 py-1 overflow-x-auto">
-            {invoices.map((inv, i) => (
-              <button
-                key={i}
-                className={`px-2 py-0.5 text-xs rounded transition-colors whitespace-nowrap ${
-                  activeTab === String(i)
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "text-muted-foreground hover:bg-accent"
-                }`}
-                onClick={() => setActiveTab(String(i))}
+        {/* Category Cards Grid */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="grid md:grid-cols-3 gap-6 mb-12"
+        >
+          {isLoading ? (
+            <div className="col-span-3 text-center py-12">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"
+              />
+            </div>
+          ) : (
+            categories.map((category, index) => (
+              <motion.button
+                key={category.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  if (category.id === 'invoices') {
+                    navigate('/invoices');
+                  } else {
+                    navigate(`/documents/${category.id}`);
+                  }
+                }}
+                className={`relative p-8 rounded-2xl text-white overflow-hidden shadow-lg hover:shadow-xl transition-shadow group min-h-64`}
               >
-                Invoice {inv.invoiceNumber || i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+                {/* Background Gradient */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-90 group-hover:opacity-100 transition-opacity`}
+                />
 
-      {/* Mobile tab bar */}
-      {isMobile && (
-        <div className="flex border-b border-border bg-muted/20">
-          <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-              mobileView === "form" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
-            }`}
-            onClick={() => setMobileView("form")}
-          >
-            <FileEdit className="h-3.5 w-3.5" /> Form
-          </button>
-          <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-              mobileView === "preview" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
-            }`}
-            onClick={() => setMobileView("preview")}
-          >
-            <Eye className="h-3.5 w-3.5" /> Preview
-          </button>
-          <button
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-              mobileView === "cloud" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
-            }`}
-            onClick={() => setMobileView("cloud")}
-          >
-            <Cloud className="h-3.5 w-3.5" /> Cloud
-          </button>
-        </div>
-      )}
+                {/* Content */}
+                <div className="relative z-10 flex flex-col items-center justify-center h-full text-center space-y-4">
+                  <motion.div
+                    whileHover={{ scale: 1.1 }}
+                    className="text-5xl opacity-90"
+                  >
+                    {category.icon}
+                  </motion.div>
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {isMobile ? (
-          <div className="w-full overflow-hidden flex flex-col">
-            <ScrollArea className="flex-1 p-3">
-              {mobileView === "form" && (
-                <InvoiceForm invoice={activeInvoice} onChange={updateInvoice} />
-              )}
-              {mobileView === "preview" && (
-                <InvoicePreview invoice={activeInvoice} />
-              )}
-              {mobileView === "cloud" && (
-                <SavedInvoices />
-              )}
-            </ScrollArea>
-          </div>
-        ) : (
-          <>
-            <div className="w-1/2 overflow-hidden flex flex-col">
-              <ScrollArea className="flex-1 p-3">
-                <InvoiceForm invoice={activeInvoice} onChange={updateInvoice} />
-              </ScrollArea>
-            </div>
-            <div className="w-1/2 border-l border-border overflow-hidden flex flex-col">
-              <div className="px-3 py-2 border-b border-border bg-muted/30">
-                <h3 className="text-xs font-semibold text-muted-foreground">Live Preview</h3>
-              </div>
-              <ScrollArea className="flex-1 p-3">
-                <InvoicePreview invoice={activeInvoice} />
-                <div className="mt-4 border-t border-border pt-3">
-                  <SavedInvoices />
+                  <div>
+                    <h3 className="text-2xl font-bold mb-1">{category.name}</h3>
+                    <p className="text-lg opacity-90">
+                      {category.count} {category.count === 1 ? 'file' : 'files'}
+                    </p>
+                  </div>
                 </div>
-              </ScrollArea>
+
+                {/* Accent */}
+                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
+              </motion.button>
+            ))
+          )}
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="grid md:grid-cols-2 gap-6"
+        >
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/documents/all')}
+            className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-xl hover:border-blue-300 dark:hover:border-blue-700 transition-colors flex flex-col items-center justify-center gap-3"
+          >
+            <FileText size={32} className="text-blue-600 dark:text-blue-400" />
+            <div className="text-center">
+              <p className="font-semibold text-zinc-900 dark:text-white">
+                View All Documents
+              </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                See everything in one place
+              </p>
             </div>
-          </>
-        )}
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/documents/all')}
+            className="p-6 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border border-orange-200 dark:border-orange-800 rounded-xl hover:border-orange-300 dark:hover:border-orange-700 transition-colors flex flex-col items-center justify-center gap-3"
+          >
+            <Plus size={32} className="text-orange-600 dark:text-orange-400" />
+            <div className="text-center">
+              <p className="font-semibold text-zinc-900 dark:text-white">
+                Upload New Files
+              </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Add documents to your hub
+              </p>
+            </div>
+          </motion.button>
+        </motion.div>
       </div>
     </div>
   );

@@ -1,30 +1,40 @@
 import { supabase } from './supabase';
+import { uploadFileToDrive } from './googleDrive';
 
 export const uploadFile = async (
   file: File,
   userId: string,
-  category: 'invoice' | 'scan' | 'document'
+  category: 'invoice' | 'scan' | 'document',
+  googleAccessToken?: string
 ) => {
   try {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `${userId}/${fileName}`;
+    let fileUrl: string;
 
-    // Upload file to storage
-    const { data, error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(filePath, file);
+    // Upload to Google Drive if token available, otherwise use Supabase Storage
+    if (googleAccessToken) {
+      const driveFile = await uploadFileToDrive(file, googleAccessToken);
+      fileUrl = driveFile.webViewLink;
+    } else {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
 
-    if (uploadError) {
-      throw uploadError;
+      // Upload file to Supabase storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      fileUrl = publicUrlData.publicUrl;
     }
-
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('documents')
-      .getPublicUrl(filePath);
-
-    const fileUrl = publicUrlData.publicUrl;
 
     // Insert file metadata into database
     const { data: dbData, error: dbError } = await supabase
@@ -32,7 +42,7 @@ export const uploadFile = async (
       .insert({
         user_id: userId,
         file_name: file.name,
-        file_type: fileExt,
+        file_type: file.name.split('.').pop(),
         upload_date: new Date().toISOString().split('T')[0],
         category,
         file_size: file.size,

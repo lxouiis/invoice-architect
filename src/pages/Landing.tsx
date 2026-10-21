@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
-import { SignIn, FileText, Check } from '@phosphor-icons/react';
+import { SignIn, FileText, Check, EnvelopeOpen } from '@phosphor-icons/react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -46,6 +47,39 @@ export default function Landing() {
       setIsLinkSent(true);
     } catch (err) {
       setError('An unexpected error occurred');
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      // Get user info from credential
+      const decoded = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+
+      // Store Google token and info
+      localStorage.setItem('googleAccessToken', credentialResponse.credential);
+      localStorage.setItem('userEmail', decoded.email);
+
+      // Sign in to Supabase with email
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: decoded.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/documents`,
+        },
+      });
+
+      if (signInError) {
+        setError('Failed to sign in. Please use magic link instead.');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLinkSent(true);
+    } catch (err) {
+      setError('Google sign-in failed');
       setIsLoading(false);
     }
   };
@@ -157,11 +191,31 @@ export default function Landing() {
                   </>
                 )}
               </motion.button>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-300 dark:border-zinc-600" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                    Or
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('Google login failed')}
+                  theme="outline"
+                  size="large"
+                />
+              </div>
             </form>
           )}
 
           <p className="text-center text-sm text-zinc-600 dark:text-zinc-400 mt-6">
-            We'll send you a secure link to log in
+            Sign in with magic link or Google to store files in your Drive
           </p>
         </motion.div>
 

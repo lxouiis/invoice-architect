@@ -83,8 +83,9 @@ export default function UploadModal({
           demoFiles.push(newFile);
           localStorage.setItem('demoFiles', JSON.stringify(demoFiles));
         } else {
-          // Real mode: upload to Supabase
-          await uploadFile(file, userId, category);
+          // Real mode: upload to Google Drive or Supabase
+          const googleToken = localStorage.getItem('googleAccessToken');
+          await uploadFile(file, userId, category, googleToken || undefined);
         }
       }
 

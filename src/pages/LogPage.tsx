@@ -38,10 +38,12 @@ export default function LogPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      const googleToken = localStorage.getItem('googleAccessToken');
+      const storedEmail = localStorage.getItem('userEmail');
 
       if (isDemoMode) {
         // Demo mode: use mock data + uploaded files
-        setUserEmail(localStorage.getItem('userEmail') || 'demo@example.com');
+        setUserEmail(storedEmail || 'demo@example.com');
         setUserId('demo-user-id');
 
         const mockFiles: FileItem[] = [
@@ -89,6 +91,15 @@ export default function LogPage() {
         return;
       }
 
+      // Check for Google OAuth token
+      if (googleToken && storedEmail) {
+        setUserEmail(storedEmail);
+        setUserId(storedEmail);
+        fetchFiles(storedEmail);
+        return;
+      }
+
+      // Fallback to Supabase session check
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (!session || error) {
@@ -150,9 +161,13 @@ export default function LogPage() {
 
   const handleLogout = async () => {
     const isDemoMode = localStorage.getItem('demoMode') === 'true';
+    const googleToken = localStorage.getItem('googleAccessToken');
 
     if (isDemoMode) {
       localStorage.removeItem('demoMode');
+      localStorage.removeItem('userEmail');
+    } else if (googleToken) {
+      localStorage.removeItem('googleAccessToken');
       localStorage.removeItem('userEmail');
     } else {
       await supabase.auth.signOut();

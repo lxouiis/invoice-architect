@@ -21,9 +21,11 @@ export default function Dashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      const googleToken = localStorage.getItem('googleAccessToken');
+      const userEmail = localStorage.getItem('userEmail');
 
       if (isDemoMode) {
-        setUserEmail(localStorage.getItem('userEmail') || 'demo@example.com');
+        setUserEmail(userEmail || 'demo@example.com');
         setCategories([
           {
             id: 'documents',
@@ -51,6 +53,14 @@ export default function Dashboard() {
         return;
       }
 
+      // Check for Google OAuth token
+      if (googleToken && userEmail) {
+        setUserEmail(userEmail);
+        fetchCategoryCounts(userEmail);
+        return;
+      }
+
+      // Fallback to Supabase session check
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (!session || error) {
@@ -65,12 +75,12 @@ export default function Dashboard() {
     checkAuth();
   }, [navigate]);
 
-  const fetchCategoryCounts = async (userId: string) => {
+  const fetchCategoryCounts = async (userIdentifier: string) => {
     try {
       const { data, error } = await supabase
         .from('files')
         .select('category')
-        .eq('user_id', userId);
+        .eq('user_id', userIdentifier);
 
       if (error) throw error;
 
